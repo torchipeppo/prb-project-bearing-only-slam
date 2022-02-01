@@ -1,0 +1,16 @@
+cmake_minimum_required(VERSION 2.8)
+
+# init project and compiler flags
+project(bearingslam)
+set(CMAKE_CXX_FLAGS "-std=c++11 -O3")
+
+# add dependencies
+find_package(OpenCV REQUIRED)
+include_directories(${OpenCV_INCLUDE_DIRS})
+
+# TODO when I add the main executable, it should be sth like this
+# add_executable(bearingslam bearingslam.cpp)
+# target_link_libraries(bearingslam ${OpenCV_LIBS})
+
+# include test builds
+add_subdirectory(tests)
