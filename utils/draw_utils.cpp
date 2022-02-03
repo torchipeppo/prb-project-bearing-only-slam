@@ -79,7 +79,7 @@ void draw_poses(RGBImage& img, const NEPoseVector& poses) {
     }
 }
 
-void draw_landmarks(RGBImage& img, const LMPosVector lms) {
+void draw_landmarks(RGBImage& img, const LMPosVector& lms) {
     for (const LMPos& lm : lms) {
         draw_lm(img, lm);
     }
