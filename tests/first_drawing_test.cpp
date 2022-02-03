@@ -1,5 +1,7 @@
 #include "../utils/draw_utils.hpp"
 
+using namespace proj02;
+
 int main() {
     RGBImage img;
     img.create(500, 500);
