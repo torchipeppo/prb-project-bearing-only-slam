@@ -40,6 +40,14 @@ void State::add_landmark(const float& x, const float& y, const int& id) {
     add_landmark(LMPos(x,y), id);
 }
 
+NEPose State::get_pose_by_id(const int& id) const {
+    return poses[pose_id_to_stix.at(id)];
+}
+
+LMPos State::get_landmark_by_id(const int& id) const {
+    return landmarks[lm_id_to_stix.at(id)];
+}
+
 void State::draw(RGBImage& img) {
     draw_poses(img, poses);
     draw_landmarks(img, landmarks);

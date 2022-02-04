@@ -68,6 +68,11 @@ void draw_bearing(RGBImage& img, const EPose& src, const float& alpha) {
 void draw_bearing(RGBImage& img, const NEPose& src, const float& alpha) {
     draw_bearing(img, t2v(src), alpha);
 }
+void draw_bearing(RGBImage& img, const BearingObservation& obs, const State& state) {
+    NEPose src = state.get_pose_by_id(obs.get_pose_id());
+    float alpha = obs.get_bearing().angle();
+    draw_bearing(img, src, alpha);
+}
 
 
 
@@ -82,6 +87,12 @@ void draw_poses(RGBImage& img, const NEPoseVector& poses) {
 void draw_landmarks(RGBImage& img, const LMPosVector& lms) {
     for (const LMPos& lm : lms) {
         draw_lm(img, lm);
+    }
+}
+
+void draw_bearings(RGBImage& img, const BearingObservationVector& observations, const State& state) {
+    for (const BearingObservation& obs : observations) {
+        draw_bearing(img, obs, state);
     }
 }
 

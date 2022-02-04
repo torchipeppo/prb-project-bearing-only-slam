@@ -3,6 +3,8 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include "../framework/definitions.hpp"
+#include "../framework/state.hpp"
+#include "../framework/observation.hpp"
 
 namespace proj02 {
 
@@ -16,9 +18,12 @@ void draw_lm(RGBImage& img, const LMPos& lm);
 void draw_bearing(RGBImage& img, const float& x, const float& y, const float& theta, const float& alpha);
 void draw_bearing(RGBImage& img, const EPose& src, const float& alpha);
 void draw_bearing(RGBImage& img, const NEPose& src, const float& alpha);
+void draw_bearing(RGBImage& img, const BearingObservation& obs, const State& state);
 
 void draw_poses(RGBImage& img, const NEPoseVector& poses);
 
 void draw_landmarks(RGBImage& img, const LMPosVector& lms);
+
+void draw_bearings(RGBImage& img, const BearingObservationVector& obs, const State& state);
 
 }  // namespace proj02

@@ -20,6 +20,9 @@ class State {
     void add_landmark(const LMPos& lm, const int& id);
     void add_landmark(const float& x, const float& y, const int& id);
 
+    NEPose get_pose_by_id(const int& id) const;
+    LMPos get_landmark_by_id(const int& id) const;
+
     void draw(RGBImage& img);
 
     private:
