@@ -23,3 +23,11 @@ add_executable(observation_test observation_test.cpp
   ../framework/observation.cpp
 )
 target_link_libraries(observation_test opencv_highgui)
+
+# parsing the dataset (an plotting it in all its glory, why not)
+add_executable(plot_g2o plot_g2o.cpp
+  ../utils/draw_utils.cpp
+  ../framework/state.cpp
+  ../framework/observation.cpp
+)
+target_link_libraries(plot_g2o opencv_highgui)

@@ -5,6 +5,10 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
+// use to draw selectively for debug purposes. very aggressive. active if >=0.
+#define DRAW_ONLY_POSE -1
+#define DRAW_ONLY_LM -1
+
 namespace proj02 {
 
 typedef cv::Mat_<cv::Vec3b> RGBImage;

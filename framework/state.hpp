@@ -23,7 +23,7 @@ class State {
     NEPose get_pose_by_id(const int& id) const;
     LMPos get_landmark_by_id(const int& id) const;
 
-    void draw(RGBImage& img);
+    void draw(RGBImage& img, const float& bound = -1);
 
     private:
 

@@ -48,9 +48,18 @@ LMPos State::get_landmark_by_id(const int& id) const {
     return landmarks[lm_id_to_stix.at(id)];
 }
 
-void State::draw(RGBImage& img) {
-    draw_poses(img, poses);
-    draw_landmarks(img, landmarks);
+void State::draw(RGBImage& img, const float& bound) {
+    #if DRAW_ONLY_POSE>=0
+    draw_pose(img, poses[pose_id_to_stix[DRAW_ONLY_POSE]], bound);
+    #else
+    draw_poses(img, poses, bound);
+    #endif
+
+    #if DRAW_ONLY_LM>=0
+    draw_lm(img, landmarks[lm_id_to_stix[DRAW_ONLY_LM]], bound);
+    #else
+    draw_landmarks(img, landmarks, bound);
+    #endif
 }
 
 }   // namespace proj02
