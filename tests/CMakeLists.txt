@@ -29,5 +29,16 @@ add_executable(plot_g2o plot_g2o.cpp
   ../utils/draw_utils.cpp
   ../framework/state.cpp
   ../framework/observation.cpp
+  ../utils/g2o_utils.cpp
 )
 target_link_libraries(plot_g2o opencv_highgui)
+
+# testing the triangulation part, for the initial guess of the landmarks
+add_executable(triangulation_test triangulation_test.cpp
+  ../utils/draw_utils.cpp
+  ../framework/state.cpp
+  ../framework/observation.cpp
+  ../utils/g2o_utils.cpp
+  ../slam/triangulation.cpp
+)
+target_link_libraries(triangulation_test opencv_highgui)

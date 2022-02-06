@@ -41,4 +41,6 @@ class BearingObservation {
 
 typedef std::vector<BearingObservation> BearingObservationVector;
 
+typedef std::map<int, BearingObservationVector> BearingObservationsByLandmarkId;
+
 }   // namespace proj02
