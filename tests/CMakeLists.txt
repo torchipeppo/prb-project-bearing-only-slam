@@ -42,3 +42,23 @@ add_executable(triangulation_test triangulation_test.cpp
   ../slam/triangulation.cpp
 )
 target_link_libraries(triangulation_test opencv_highgui)
+
+# Test some things of the solver
+add_executable(solver_stuff solver_stuff.cpp
+  ../utils/draw_utils.cpp
+  ../framework/state.cpp
+  ../framework/observation.cpp
+  ../utils/g2o_utils.cpp
+  ../slam/triangulation.cpp
+)
+target_link_libraries(solver_stuff opencv_highgui)
+
+# General test of the full procedure. Interactive.
+add_executable(testone testone.cpp
+  ../utils/draw_utils.cpp
+  ../framework/state.cpp
+  ../framework/observation.cpp
+  ../utils/g2o_utils.cpp
+  ../slam/triangulation.cpp
+)
+target_link_libraries(testone opencv_highgui)

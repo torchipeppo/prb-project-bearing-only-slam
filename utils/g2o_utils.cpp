@@ -88,6 +88,18 @@ void parse_g2o(std::string fname, State& state, BearingObservationVector& bearin
             bearings.emplace_back(id_pose, id_lm, bearing);
         }
 
+        // empty line
+        else if (line_type.compare("") == 0) {
+            // empty lines are fine
+            ;   // do nothing, so this doesn't count as unrecognized later
+        }
+
+        // temporary comment system
+        // TODO remove
+        else if (line_type.compare("#") == 0 || line_type.compare("//") == 0 || line_type.compare("%") == 0) {
+            ;
+        }
+
         else {
             std::cout << "Unrecognized " << line_type << std::endl;
         }
@@ -95,6 +107,14 @@ void parse_g2o(std::string fname, State& state, BearingObservationVector& bearin
 
     // some extra margin for the bound
     bound += 3;
+
+    if (state.number_of_poses() == 0) {
+        std::cout << "Warning: no poses found. Stuff is likely to break." << std::endl;
+    }
+    // no landmarks == no problem
+    if (bearings.size() == 0) {
+        std::cout << "Warning: no bearing observations found. Stuff is likely to break." << std::endl;
+    }
 
     f.close();
 }

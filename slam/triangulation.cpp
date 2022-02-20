@@ -48,11 +48,6 @@ LMPos triangulate_one_landmark(const State& state, const BearingObservationVecto
         b(i) = s*pose.x() - c*pose.y();
     }
 
-    // std::cout << "Alright, A is..." << std::endl;
-    // std::cout << A << std::endl;
-    // std::cout << "And b is..." << std::endl;
-    // std::cout << b << std::endl;
-
     // chose the best compromise between speed, accuracy and numerical stability.
     // I expect to only compute this triangulation once and as an initial estimate, after all.
     LMPos lm = A.colPivHouseholderQr().solve(b);
@@ -63,12 +58,6 @@ LMPos triangulate_one_landmark(const State& state, const BearingObservationVecto
 // adds the triangulated lms directly to the state
 void triangulate_landmarks(State& state, const BearingObservationVector& observations) {
     BearingObservationsByLandmarkId observations_by_lm = subdivide_bearings_by_landmark_id(observations);
-
-    // int id_whatever = 196;
-    // std::cout << "So, for example, the observations for lm id " << id_whatever << " are:" << std::endl;
-    // for (const BearingObservation& obs : observations_by_lm[id_whatever]) {
-    //     std::cout << "    " << obs.get_pose_id() << "\t" << obs.get_lm_id() << "\t" << obs.get_bearing().angle() << std::endl;
-    // }
 
     for (auto it = observations_by_lm.begin(); it != observations_by_lm.end(); it++) {
         int id = it->first;
