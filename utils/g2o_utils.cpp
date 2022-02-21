@@ -126,12 +126,6 @@ void parse_g2o(std::string fname, State& state, BearingObservationVector& bearin
             ;   // do nothing, so this doesn't count as unrecognized later
         }
 
-        // temporary comment system
-        // TODO remove
-        else if (line_type.compare("#") == 0 || line_type.compare("//") == 0 || line_type.compare("%") == 0) {
-            ;
-        }
-
         else {
             std::cout << "Unrecognized " << line_type << std::endl;
         }

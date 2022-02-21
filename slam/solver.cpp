@@ -11,7 +11,6 @@ Solver::Solver(const State& state, const BearingObservationVector& bear_obs, con
     N = 3*state.number_of_poses() + 2*state.number_of_landmarks();
     H.resize(N, N);
     b.resize(N);
-    // TODO might be able to reserve the H right away
     analyzed_H = false;
     construct_the_permutation();
     kernel_threshold = 1.0f;

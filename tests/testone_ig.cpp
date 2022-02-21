@@ -13,8 +13,8 @@
 using namespace proj02;
 
 int main(int argc, char** argv) {
-    if (argc < 3) {
-        std::cout << "give initial_guess ground_truth please" << std::endl;
+    if (argc < 2) {
+        std::cout << "initial_guess_fname please" << std::endl;
         return 1;
     }
 
@@ -22,27 +22,15 @@ int main(int argc, char** argv) {
     img.create(800, 800);
     img=CLEAR_COLOR;
 
-    // get the initial guess of the state from the initial guess file...
+    // parse dataset
     State state(300, 200);
-    BearingObservationVector _;
-    _.reserve(1800);
-    int fixed_pose_id;
-    float bound1 = 0;
-    parse_g2o(argv[1], state, _, fixed_pose_id, bound1);
-
-    // ...but get the *noiseless* observations from the groundtruth file.
-    // let's try easy mode first.
-    State __(300, 200);
     BearingObservationVector bearing_observations;
     bearing_observations.reserve(1800);
     OdometryObservationVector odometry_observations;
     odometry_observations.reserve(300);
-    int ___;
-    float bound2 = 0;
-    parse_g2o(argv[2], __, bearing_observations, odometry_observations, ___, bound2);
-
-    // keep the larger bound
-    float bound = (bound1 > bound2) ? bound1 : bound2;
+    int fixed_pose_id;
+    float bound = 0;
+    parse_g2o(argv[1], state, bearing_observations, odometry_observations, fixed_pose_id, bound);
 
     // default the fixed pose id if it wasn't provided
     if (fixed_pose_id < 0) {
@@ -59,7 +47,7 @@ int main(int argc, char** argv) {
     draw_bearings(img, bearing_observations, solver.state, bound);
     draw_odometries(img, odometry_observations, solver.state, bound);
     solver.state.draw(img, bound);
-    cv::imshow("we're all trapped in a maze of landmarks", img);
+    cv::imshow("pursuing my true slam", img);
 
     std::cout << "Any key other than the specified ones: advance one iteration" << std::endl;
     std::cout << "Tab/PgDn/Shift: advance many iterations" << std::endl;
@@ -77,6 +65,7 @@ int main(int argc, char** argv) {
                 solver.step();
                 ++counter;
             }
+            std::cout << "Fatto!" << std::endl;
         }
         else {
             solver.step();
@@ -89,7 +78,7 @@ int main(int argc, char** argv) {
         draw_bearings(img, bearing_observations, solver.state, bound);
         draw_odometries(img, odometry_observations, solver.state, bound);
         solver.state.draw(img, bound);
-        cv::imshow("we're all trapped in a maze of landmarks", img);
+        cv::imshow("pursuing my true slam", img);
     }
 
     return 0;

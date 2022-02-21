@@ -1,5 +1,5 @@
 /**
- * Structure(s?) to represent single observations, and types for vectors of those.
+ * Structures to represent single observations, and types for vectors of those.
  */
 
 #pragma once
@@ -41,7 +41,9 @@ class BearingObservation {
 
 
 // Assume the odometry is given on the chart of the source pose. So it's R^3, not SO(2).
-// Also, it's a little different. TODO elaborate.
+// Also, it's a little different: the translation part of the odom. is supposed to be first rotated into the source pose frame and then applied to the source position
+// (while the boxplus defined in state.cpp uses a product of homog. matrices, which would rotate the translation of the pose by the rotation of the odometry instead)
+// The consequences of this difference can be observed in the drawing code and the solver code.
 // Seems to coincide with my understanding of the G2O doc: https://github.com/RainerKuemmerle/g2o/wiki/File-Format-SLAM-2D#odometry-or-loop-closures
 class OdometryObservation {
 

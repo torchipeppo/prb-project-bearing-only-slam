@@ -76,3 +76,15 @@ add_executable(testone testone.cpp
   ../slam/solver_jacobians.cpp
 )
 target_link_libraries(testone opencv_highgui)
+
+# Interactive test with only the noisy dataset, as a prelude to the final executable
+add_executable(testone_ig testone_ig.cpp
+  ../utils/draw_utils.cpp
+  ../framework/state.cpp
+  ../framework/observation.cpp
+  ../utils/g2o_utils.cpp
+  ../slam/triangulation.cpp
+  ../slam/solver.cpp
+  ../slam/solver_jacobians.cpp
+)
+target_link_libraries(testone_ig opencv_highgui)
