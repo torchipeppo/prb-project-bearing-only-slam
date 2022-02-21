@@ -39,7 +39,17 @@ class Solver {
         // TODO might be able to reserve the H right away
         analyzed_H = false;
         construct_the_permutation();
+        kernel_threshold = 1.0f;
+        damping_factor = 0.01f;
     };
+
+    // configure some optional parameters, if the default is not good
+    void set_kernel_threshold(float kt) {
+        kernel_threshold = kt;
+    }
+    void set_damping_factor(float df) {
+        damping_factor = df;
+    }
 
     void step() {
         H.setZero();
@@ -50,6 +60,12 @@ class Solver {
             SparseMatrixXf jacobian;
             jacobian.resize(1, N);
             error_and_jacobian(state, obs, error, jacobian);
+
+            // simplistic threshold robust kernel
+            float error_omeganorm = error * obs.get_omega() * error;
+            if (error_omeganorm > kernel_threshold) {
+                error *= std::sqrt(kernel_threshold/error_omeganorm);
+            }
 
             // omega is assumed to be on chart
             H += jacobian.transpose() * obs.get_omega() * jacobian;
@@ -62,6 +78,12 @@ class Solver {
             jacobian.resize(3, N);
             error_and_jacobian(state, obs, error, jacobian);
 
+            // simplistic threshold robust kernel
+            float error_omeganorm = error.transpose() * obs.get_omega() * error;
+            if (error_omeganorm > kernel_threshold) {
+                error *= std::sqrt(kernel_threshold/error_omeganorm);
+            }
+
             H += jacobian.transpose() * obs.get_omega_sparse() * jacobian;
             b += jacobian.transpose() * obs.get_omega_sparse() * error;
         }
@@ -70,7 +92,7 @@ class Solver {
         SparseMatrixXf diag;
         diag.resize(H.rows(), H.cols());
         diag.setIdentity();
-        diag *= 0.01f;
+        diag *= damping_factor;
         H += diag;
 
         // remove the fixed pose from H and b
@@ -463,6 +485,10 @@ class Solver {
     Eigen::VectorXf b;
     SparseMatrixXf H_nofixed;
     Eigen::VectorXf b_nofixed;
+
+    // optional parameters, default in constructor
+    float kernel_threshold;
+    float damping_factor;
 
     // it appears an Eigen sparse system solver can save the sparsity pattern of H
     // in order to solve many problems with the same pattern more efficiently.

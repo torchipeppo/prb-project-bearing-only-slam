@@ -35,6 +35,12 @@ LMPos triangulate_one_landmark(const State& state, const BearingObservationVecto
     A.resize(M, Eigen::NoChange);
     b.resize(M);
 
+    if (M==1) {
+        std::cout << "Landmark no. " << observations[0].get_lm_id() << " only has one observation.\n";
+        std::cout << "  Bearing-only SLAM won't be able to locate it properly." << std::endl;
+        // (as is the case with numbers 69, 112, 114 in the data I was given)
+    }
+
     for (int i=0; i<M; i++) {
         int id = observations[i].get_pose_id();
         EPose pose = t2v(state.get_pose_by_id(id));    // t2v for convenience
