@@ -53,6 +53,16 @@ add_executable(solver_stuff solver_stuff.cpp
 )
 target_link_libraries(solver_stuff opencv_highgui)
 
+# testing that the addition of the odometry edges went alright
+add_executable(plot_g2o_v2 plot_g2o_v2.cpp
+  ../utils/draw_utils.cpp
+  ../framework/state.cpp
+  ../framework/observation.cpp
+  ../utils/g2o_utils.cpp
+  ../slam/triangulation.cpp
+)
+target_link_libraries(plot_g2o_v2 opencv_highgui)
+
 # General test of the full procedure. Interactive.
 add_executable(testone testone.cpp
   ../utils/draw_utils.cpp

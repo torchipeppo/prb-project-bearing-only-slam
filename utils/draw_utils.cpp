@@ -10,6 +10,9 @@
 #define BEARING_LEN 50
 #define BEARING_COLOR cv::Scalar(0,255,0)     // GREEN
 
+#define ODOMETRY_COLOR cv::Scalar(255, 0, 250)    // PURPLE
+#define ODOMETRY_LEN 4
+
 
 
 namespace proj02 {
@@ -22,6 +25,10 @@ void draw_point(RGBImage& img, const int& x, const int& y, const int& radius, co
         return;
     }
     cv::circle(img, cv::Point(x,y), radius, color);
+}
+
+void draw_segment(RGBImage& img, const int& x1, const int& y1, const int& x2, const int& y2, const cv::Scalar& color) {
+    cv::line(img, cv::Point(x1, y1), cv::Point(x2, y2), color);
 }
 
 void draw_line_ray(RGBImage& img, const int& x, const int& y, const int& length, const float& orientation, const cv::Scalar& color) {
@@ -120,6 +127,34 @@ void draw_bearing(RGBImage& img, const BearingObservation& obs, const State& sta
     draw_bearing(img, src, alpha, bound);
 }
 
+void draw_odometry(RGBImage& img, const NEPose& src, const EPose& trasf, const float& bound) {
+    EPose src_eucl = t2v(src);
+    float src_x = src_eucl.x();
+    float src_y = src_eucl.y();
+    float src_theta = src_eucl.z();
+    // memento: this transformation is NOT boxplus
+    Eigen::Vector2f t = trasf.head<2>();
+    t = src.rotation() * t;
+    float dest_x = src_x + t.x();
+    float dest_y = src_y + t.y();
+    float dest_theta = src_theta + trasf.z();
+    if (bound > 0) {
+        src_x = map_interval(src_x, -bound, bound, 0, img.cols-1);
+        src_y = map_interval(src_y, -bound, bound, 0, img.cols-1);
+        src_y = img.rows-1 - src_y;
+        dest_x = map_interval(dest_x, -bound, bound, 0, img.cols-1);
+        dest_y = map_interval(dest_y, -bound, bound, 0, img.cols-1);
+        dest_y = img.rows-1 - dest_y;
+    }   // else they are fine as initialized
+    draw_segment(img, src_x, src_y, dest_x, dest_y, ODOMETRY_COLOR);
+    draw_line_ray(img, dest_x, dest_y, ODOMETRY_LEN, dest_theta, ODOMETRY_COLOR);
+}
+void draw_odometry(RGBImage& img, const OdometryObservation& obs, const State& state, const float& bound) {
+    NEPose src = state.get_pose_by_id(obs.get_source_id());
+    EPose trasf = obs.get_transformation();
+    draw_odometry(img, src, trasf, bound);
+}
+
 
 
 // finally, some collective ones
@@ -145,6 +180,19 @@ void draw_bearings(RGBImage& img, const BearingObservationVector& observations, 
         if (obs.get_lm_id()!=DRAW_ONLY_LM) continue;
         #endif
         draw_bearing(img, obs, state, bound);
+    }
+}
+
+void draw_odometries(RGBImage& img, const OdometryObservationVector& observations, const State& state, const float& bound) {
+    for (const OdometryObservation& obs : observations) {
+        #if DRAW_ONLY_POSE>=0
+        if (obs.get_source_id()!=DRAW_ONLY_POSE) continue;
+        // std::cout << t2v(state.get_pose_by_id(obs.get_source_id())).transpose() << std::endl;
+        // std::cout << obs.get_transformation().transpose() << std::endl;
+        // std::cout << t2v(boxplus(state.get_pose_by_id(obs.get_source_id()), obs.get_transformation())).transpose() << std::endl;
+        // std::cout << t2v(state.get_pose_by_id(obs.get_dest_id())).transpose() << std::endl;
+        #endif
+        draw_odometry(img, obs, state, bound);
     }
 }
 

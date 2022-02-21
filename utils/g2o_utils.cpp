@@ -3,6 +3,11 @@
 namespace proj02 {
 
 void parse_g2o(std::string fname, State& state, BearingObservationVector& bearings, int& fixed_pose_id, float& bound) {
+    OdometryObservationVector _;
+    parse_g2o(fname, state, bearings, _, fixed_pose_id, bound);
+}
+
+void parse_g2o(std::string fname, State& state, BearingObservationVector& bearings, OdometryObservationVector& odometries, int& fixed_pose_id, float& bound) {
     bound = 0;
     fixed_pose_id = -1;
 
@@ -72,8 +77,35 @@ void parse_g2o(std::string fname, State& state, BearingObservationVector& bearin
 
         // odometry edge
         else if (line_type.compare("EDGE_SE2") == 0) {
-            // unsupported unless I find it to be useful later
-            ;   // do nothing, so this doesn't count as unrecognized later
+            line_stream >> token;
+            int source_id = std::stoi(token);
+            line_stream >> token;
+            int dest_id = std::stoi(token);
+            line_stream >> token;
+            float x = std::stof(token);
+            line_stream >> token;
+            float y = std::stof(token);
+            line_stream >> token;
+            float theta = std::stof(token);
+            // next is the upper-triangular body of omega, row-major (the lower-triangular is symmetric)
+            Eigen::Matrix3f omega;
+            line_stream >> token;
+            omega(0,0) = std::stof(token);
+            line_stream >> token;
+            omega(0,1) = std::stof(token);
+            omega(1,0) = std::stof(token);
+            line_stream >> token;
+            omega(0,2) = std::stof(token);
+            omega(2,0) = std::stof(token);
+            line_stream >> token;
+            omega(1,1) = std::stof(token);
+            line_stream >> token;
+            omega(1,2) = std::stof(token);
+            omega(2,1) = std::stof(token);
+            line_stream >> token;
+            omega(2,2) = std::stof(token);
+            
+            odometries.emplace_back(source_id, dest_id, x, y, theta, omega);
         }
 
         // bearing observation edge

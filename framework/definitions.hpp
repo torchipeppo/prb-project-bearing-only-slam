@@ -29,6 +29,8 @@ typedef std::vector<int> AssociationVec;     // index to id is fine as a vector 
 
 typedef Eigen::Matrix<float, 1, 2> Matrix1_2f;
 typedef Eigen::Matrix<float, 2, 3> Matrix2_3f;
+typedef Eigen::Matrix<float, 3, 1> Matrix3_1f;
+typedef Eigen::Matrix<float, 3, 2> Matrix3_2f;
 
 typedef Eigen::SparseMatrix<float> SparseMatrixXf;
 

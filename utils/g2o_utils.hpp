@@ -23,6 +23,9 @@
 
 namespace proj02 {
 
+// OUTDATED VERSION, it only stays to make past tests work
 void parse_g2o(std::string fname, State& state, BearingObservationVector& bearings, int& fixed_pose_id, float& bound);
+
+void parse_g2o(std::string fname, State& state, BearingObservationVector& bearings, OdometryObservationVector& odometries, int& fixed_pose_id, float& bound);
 
 }   // namespace proj02

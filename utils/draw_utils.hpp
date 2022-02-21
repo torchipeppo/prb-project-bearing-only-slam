@@ -20,10 +20,15 @@ void draw_bearing(RGBImage& img, const EPose& src, const float& alpha, const flo
 void draw_bearing(RGBImage& img, const NEPose& src, const float& alpha, const float& bound = -1);
 void draw_bearing(RGBImage& img, const BearingObservation& obs, const State& state, const float& bound = -1);
 
+void draw_odometry(RGBImage& img, const NEPose& src, const EPose& trasf, const float& bound = -1);
+void draw_odometry(RGBImage& img, const OdometryObservation& obs, const State& state, const float& bound = -1);
+
 void draw_poses(RGBImage& img, const NEPoseVector& poses, const float& bound = -1);
 
 void draw_landmarks(RGBImage& img, const LMPosVector& lms, const float& bound = -1);
 
 void draw_bearings(RGBImage& img, const BearingObservationVector& obs, const State& state, const float& bound = -1);
+
+void draw_odometries(RGBImage& img, const OdometryObservationVector& observations, const State& state, const float& bound = -1);
 
 }  // namespace proj02

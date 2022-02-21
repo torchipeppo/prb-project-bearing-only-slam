@@ -25,10 +25,12 @@ class Solver {
     // much of the reason the solver is an object is so that it can hold the state
     State state;
     BearingObservationVector bearing_observations;
+    OdometryObservationVector odometry_observations;
 
-    Solver(const State& state, const BearingObservationVector& bearing_observations, const int& fixed_pose_id) :
+    Solver(const State& state, const BearingObservationVector& bear_obs, const OdometryObservationVector& odom_obs, const int& fixed_pose_id) :
         state(state),
-        bearing_observations(bearing_observations),
+        bearing_observations(bear_obs),
+        odometry_observations(odom_obs),
         fixed_pose_id(fixed_pose_id)
     {
         N = 3*state.number_of_poses() + 2*state.number_of_landmarks();
@@ -52,6 +54,16 @@ class Solver {
             // omega is assumed to be on chart
             H += jacobian.transpose() * obs.get_omega() * jacobian;
             b += jacobian.transpose() * obs.get_omega() * error;
+        }
+
+        for (OdometryObservation& obs : odometry_observations) {
+            EPose error;
+            SparseMatrixXf jacobian;
+            jacobian.resize(3, N);
+            error_and_jacobian(state, obs, error, jacobian);
+
+            H += jacobian.transpose() * obs.get_omega_sparse() * jacobian;
+            b += jacobian.transpose() * obs.get_omega_sparse() * error;
         }
 
         // add a small diagonal matrix to the H as damping, in case it's not SPD
@@ -177,6 +189,79 @@ class Solver {
         // done at last. error and jacobian are "returned" by reference.
     }
 
+    void error_and_jacobian(const State& state, const OdometryObservation& obs, EPose& error, SparseMatrixXf& jacobian) {
+        int src_id = obs.get_source_id();
+        int dst_id = obs.get_dest_id();
+        const NEPose& src_pose = state.get_pose_by_id(src_id);
+        const NEPose& dst_pose = state.get_pose_by_id(dst_id);
+
+        EPose prediction = predict_odometry(src_pose, dst_pose);     // h(X)
+
+        // chosen boxminus is: Euclidean minus with angle normalization
+        error = prediction - obs.get_transformation();
+        error.z() = normalized_angle(error.z());
+
+        // Now for the Jacobian
+        // Error function is linear, so we can derivate h(X) rather than the error.
+        // (R_s and t_s are the components of src_pose. Similarly dor R_d, t_d and dst_pose.)
+        // (R_s and R_t are rotation matrices, theta_s and theta_d the corresponding angles. Angle normalizations are omitted.)
+        // h(X) = [ R_s^T * (t_d - t_s) ]
+        //        [  theta_d - theta_s  ]                 (that's how I'll represent a multiple-row/block expression)
+        // Remembering that
+        // X [+] Dx = [ DR*R , DR*t + Dt ]
+        //            [   0  ,     1     ]                (comma separates columns)
+        // Then
+        // h(X [+] Dx) = [ (DR_s*R_s)^T * (DR_d*t_d + Dt_d - DR_s*t_s - Dt_s) ]
+        //               [       theta_d + Dtheta_d - theta_s - Dtheta_s      ]
+        //
+        // (note the top block is == (DR_s*R_s)^T * (DR_d*t_d + Dt_d - Dt_s) - R_s^T * t_s, this will be relevant (only) when deriving w.r.t. Dtheta_s)
+        // (fortunately there's none of the nested function madness that was in the bearing jacobian)
+
+        // caching stuff, we'll need it
+        Eigen::Matrix2f R_s = src_pose.rotation();
+        Eigen::Vector2f t_d = dst_pose.translation();
+        Eigen::Matrix2f DR_prime;   // (computed in Dx = 0)
+        DR_prime(0,0) = 0;
+        DR_prime(1,0) = 1;
+        DR_prime(0,1) = -1;
+        DR_prime(1,1) = 0;
+
+        // build all the blocks
+        Matrix3_2f jac_wrt_Dt_s;
+        jac_wrt_Dt_s.setZero();    // this takes care of the bottom row
+        jac_wrt_Dt_s.block<2,2>(0,0) = -R_s.transpose();     // there'd also be DR_s, but it becomes I when Dx==0
+        Matrix3_1f jac_wrt_Dtheta_s;
+        jac_wrt_Dtheta_s.head<2>() = (DR_prime * R_s).transpose() * t_d;   // see alternative top block, derivate that, then set Dx=0
+        jac_wrt_Dtheta_s(2) = -1;
+        Matrix3_2f jac_wrt_Dt_d;
+        jac_wrt_Dt_d.setZero();    // this takes care of the bottom row
+        jac_wrt_Dt_d.block<2,2>(0,0) = R_s.transpose();     // there'd also be DR_s, but it becomes I when Dx==0
+        Matrix3_1f jac_wrt_Dtheta_d;
+        jac_wrt_Dtheta_d.head<2>() = R_s.transpose() * DR_prime * t_d;
+        jac_wrt_Dtheta_d(2) = 1;
+
+        // prepare the triplets for the sparse jacobian
+        std::vector<Triplet_f> triplets;
+        triplets.reserve(18);
+        // fiddling with the indices of the jacobian (jacox = JAcobian COlumn indeX)
+        const int src_start_jacox = 3*state.pose_stix(src_id);
+        const int dst_start_jacox = 3*state.pose_stix(dst_id);
+        // back to the blocks
+        for (int i=0; i<3; i++) {
+            triplets.emplace_back(i, src_start_jacox, jac_wrt_Dt_s(i,0));
+            triplets.emplace_back(i, src_start_jacox+1, jac_wrt_Dt_s(i,1));
+            triplets.emplace_back(i, src_start_jacox+2, jac_wrt_Dtheta_s(i));
+            triplets.emplace_back(i, dst_start_jacox, jac_wrt_Dt_d(i,0));
+            triplets.emplace_back(i, dst_start_jacox+1, jac_wrt_Dt_d(i,1));
+            triplets.emplace_back(i, dst_start_jacox+2, jac_wrt_Dtheta_d(i));
+        }
+
+        // finally set the jacobian
+        jacobian.setFromTriplets(triplets.begin(), triplets.end());
+
+        // done at last. error and jacobian are "returned" by reference.
+    }
+
     void error_and_numerical_jacobian(const State& state, const BearingObservation& obs, float& error, SparseMatrixXf& jacobian) {
         int pose_id = obs.get_pose_id();
         int lm_id = obs.get_lm_id();
@@ -231,10 +316,105 @@ class Solver {
         // done at last. error and jacobian are "returned" by reference.
     }
 
+    void error_and_numerical_jacobian(const State& state, const OdometryObservation& obs, EPose& error, SparseMatrixXf& jacobian) {
+        int src_id = obs.get_source_id();
+        int dst_id = obs.get_dest_id();
+        const NEPose& src_pose = state.get_pose_by_id(src_id);
+        const NEPose& dst_pose = state.get_pose_by_id(dst_id);
+
+        EPose prediction = predict_odometry(src_pose, dst_pose);     // h(X)
+
+        // chosen boxminus is: Euclidean minus with angle normalization
+        error = prediction - obs.get_transformation();
+        error.z() = normalized_angle(error.z());
+
+        // Now for the Jacobian. some preparations first...
+        // Sparse matrices are initialized from triplets
+        std::vector<Triplet_f> triplets;
+        triplets.reserve(18);
+
+        float epsilon = 0.001;
+
+        auto error_of_X_boxplus_Dx = [this, &src_pose, &dst_pose, &obs](EPose delta_src_pose, EPose delta_dst_pose) -> EPose {
+            EPose prediction = predict_odometry(boxplus(src_pose, delta_src_pose), boxplus(dst_pose, delta_dst_pose));     // h(X [+] Dx)
+            EPose err_bp = prediction - obs.get_transformation();
+            err_bp.z() = normalized_angle(err_bp.z());
+            return err_bp;
+        };
+
+        // pass arguments that have exactly one "1" among them and the rest is all zero (so as to select the specific var. to derivate wrt.)
+        auto numerical_derivative = [epsilon, error_of_X_boxplus_Dx](EPose src_selector, EPose dst_selector) -> EPose {
+            EPose delta_src = epsilon*src_selector;
+            EPose delta_dst = epsilon*dst_selector;
+            EPose err_plus = error_of_X_boxplus_Dx(delta_src, delta_dst);
+            EPose err_minus = error_of_X_boxplus_Dx(-delta_src, -delta_dst);
+            return (err_plus-err_minus) / (2*epsilon);
+        };
+
+        // fiddling with the indices of the jacobian (jacox = JAcobian COlumn indeX)
+        const int src_start_jacox = 3*state.pose_stix(src_id);
+        const int dst_start_jacox = 3*state.pose_stix(dst_id);
+
+        // ready for the numerical jacobian
+        // first column
+        EPose nd = numerical_derivative(EPose(1, 0, 0), EPose(0, 0, 0));
+        triplets.push_back(Triplet_f(0, src_start_jacox, nd(0)));
+        triplets.push_back(Triplet_f(1, src_start_jacox, nd(1)));
+        triplets.push_back(Triplet_f(2, src_start_jacox, nd(2)));
+        // second
+        nd = numerical_derivative(EPose(0, 1, 0), EPose(0, 0, 0));
+        triplets.push_back(Triplet_f(0, src_start_jacox+1, nd(0)));
+        triplets.push_back(Triplet_f(1, src_start_jacox+1, nd(1)));
+        triplets.push_back(Triplet_f(2, src_start_jacox+1, nd(2)));
+        // third
+        nd = numerical_derivative(EPose(0, 0, 1), EPose(0, 0, 0));
+        triplets.push_back(Triplet_f(0, src_start_jacox+2, nd(0)));
+        triplets.push_back(Triplet_f(1, src_start_jacox+2, nd(1)));
+        triplets.push_back(Triplet_f(2, src_start_jacox+2, nd(2)));
+        // fourth (now for the dst)
+        nd = numerical_derivative(EPose(0, 0, 0), EPose(1, 0, 0));
+        triplets.push_back(Triplet_f(0, dst_start_jacox, nd(0)));
+        triplets.push_back(Triplet_f(1, dst_start_jacox, nd(1)));
+        triplets.push_back(Triplet_f(2, dst_start_jacox, nd(2)));
+        // fifth
+        nd = numerical_derivative(EPose(0, 0, 0), EPose(0, 1, 0));
+        triplets.push_back(Triplet_f(0, dst_start_jacox+1, nd(0)));
+        triplets.push_back(Triplet_f(1, dst_start_jacox+1, nd(1)));
+        triplets.push_back(Triplet_f(2, dst_start_jacox+1, nd(2)));
+        // sixth
+        nd = numerical_derivative(EPose(0, 0, 0), EPose(0, 0, 1));
+        triplets.push_back(Triplet_f(0, dst_start_jacox+2, nd(0)));
+        triplets.push_back(Triplet_f(1, dst_start_jacox+2, nd(1)));
+        triplets.push_back(Triplet_f(2, dst_start_jacox+2, nd(2)));
+
+        // construct jac. from those triplets
+        jacobian.setFromTriplets(triplets.begin(), triplets.end());
+
+        // done at last. error and jacobian are "returned" by reference.
+    }
+
     float predict_bearing(const NEPose& pose, const LMPos& lm) {
         Eigen::Vector2f robot_to_lm_wrt_robot = pose.inverse() * lm;
         float bearing_angle = atan2f(robot_to_lm_wrt_robot.y(), robot_to_lm_wrt_robot.x());
         return bearing_angle;
+    }
+
+    EPose predict_odometry(const NEPose& src, const NEPose& dst) {
+        // want to get an odometry <t, theta> such that
+        //   dst.t = src.t + rot(src.theta) * odom.t
+        //   dst.theta = src.theta + odom.theta
+        //   (i.e. odom.t is in the frame of src)
+        // this is NOT an homogeneous transformation handled by v2t/t2v
+        // this is what matches with the test plot_g2o_v2 and the G2O doc
+        EPose esrc = t2v(src);
+        EPose edst = t2v(dst);
+        EPose pred;
+        // the translation part is the vector from dst to src, in the frame of src
+        Eigen::Vector2f t = edst.head<2>() - esrc.head<2>();
+        pred.head<2>() = src.rotation().transpose() * t;
+        // the rotation part is just the angle difference
+        pred.z() = normalized_angle(edst.z() - esrc.z());
+        return pred;
     }
 
     float normalized_angle(float angle) {

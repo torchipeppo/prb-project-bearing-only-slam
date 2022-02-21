@@ -1,3 +1,9 @@
+/**
+ * IMPORTANT TODO
+ * Serve un caso di default migliore per il fixed_pose_id in caso non stia nel file,
+ * non possiamo garantire che ci sarà la posa con id 0
+ */
+
 #include "../slam/solver.hpp"
 #include "../slam/triangulation.hpp"
 #include "../utils/g2o_utils.hpp"
@@ -33,11 +39,13 @@ int main(int argc, char** argv) {
     // ...but get the *noiseless* observations from the groundtruth file.
     // let's try easy mode first.
     State __(300, 200);
-    BearingObservationVector observations;
-    observations.reserve(1800);
+    BearingObservationVector bearing_observations;
+    bearing_observations.reserve(1800);
+    OdometryObservationVector odometry_observations;
+    odometry_observations.reserve(300);
     int ___;
     float bound2 = 0;
-    parse_g2o(argv[2], __, observations, ___, bound2);
+    parse_g2o(argv[2], __, bearing_observations, odometry_observations, ___, bound2);
 
     // keep the larger bound
     float bound = (bound1 > bound2) ? bound1 : bound2;
@@ -48,13 +56,14 @@ int main(int argc, char** argv) {
     }
 
     // initial guess for the landmarks
-    triangulate_landmarks(state, observations);
+    triangulate_landmarks(state, bearing_observations);
 
     // initialize the solver
-    Solver solver(state, observations, fixed_pose_id);
+    Solver solver(state, bearing_observations, odometry_observations, fixed_pose_id);
 
     // show initial situation
-    draw_bearings(img, observations, solver.state, bound);
+    draw_bearings(img, bearing_observations, solver.state, bound);
+    draw_odometries(img, odometry_observations, solver.state, bound);
     solver.state.draw(img, bound);
     cv::imshow("we're all trapped in a maze of landmarks", img);
 
@@ -83,7 +92,8 @@ int main(int argc, char** argv) {
         img=CLEAR_COLOR;
         // just a simple visual indicator that iterations are passing, it has NO meaning as a progressbar or anything
         cv::rectangle(img, cv::Point(img.rows-11, 0), cv::Point(img.rows-1, (counter*10)%img.cols), cv::Scalar(255, 0, 200), -1);
-        draw_bearings(img, observations, solver.state, bound);
+        draw_bearings(img, bearing_observations, solver.state, bound);
+        draw_odometries(img, odometry_observations, solver.state, bound);
         solver.state.draw(img, bound);
         cv::imshow("we're all trapped in a maze of landmarks", img);
     }
