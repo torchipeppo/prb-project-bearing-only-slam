@@ -50,6 +50,8 @@ add_executable(solver_stuff solver_stuff.cpp
   ../framework/observation.cpp
   ../utils/g2o_utils.cpp
   ../slam/triangulation.cpp
+  ../slam/solver.cpp
+  ../slam/solver_jacobians.cpp
 )
 target_link_libraries(solver_stuff opencv_highgui)
 
@@ -70,5 +72,7 @@ add_executable(testone testone.cpp
   ../framework/observation.cpp
   ../utils/g2o_utils.cpp
   ../slam/triangulation.cpp
+  ../slam/solver.cpp
+  ../slam/solver_jacobians.cpp
 )
 target_link_libraries(testone opencv_highgui)
