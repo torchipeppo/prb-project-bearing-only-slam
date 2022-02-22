@@ -11,9 +11,8 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 
-# TODO when I add the main executable, it should be sth like this
-# add_executable(bearingslam bearingslam.cpp)
-# target_link_libraries(bearingslam ${OpenCV_LIBS})
+# include main executables
+add_subdirectory(executables)
 
 # include test builds
 add_subdirectory(tests)
