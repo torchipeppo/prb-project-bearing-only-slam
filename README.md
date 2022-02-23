@@ -4,9 +4,10 @@
 mkdir build
 cd build
 cmake ..
-make
+make bearing_only_slam
 ```
-<!--TODO: give command for only the bearing_only_slam executable?-->
+
+*(Use `make` instead to compile everything, including all the tests. I suggest the `-j` option in that case.)*
 
 # Executing the project
 
@@ -22,25 +23,37 @@ On the given data, the algorithm converged in ~20 iterations, and it
 definitely converged in one Tab press (which does 50 iterations
 at once).
 
-# Legend
+## Controls
 
-* Red circles: Poses. A line shows the orientation.
-* Blue squares: landmarks.
-* Green lines: bearing measures.
-* Purple lines: odometry measures.
-* Purple bar at the side of the image: no meaning at all.
+*Note: some buttons may not work if the user doesn't click on the image
+first.*
+
+* **Any key other than the listed ones**: advance one iteration
+* **Tab/PgDn/Shift**: advance many iterations (note: the image will freeze and
+  not update until the whole batch of iterations is done)
+* **B**: toggle bearing observation display
+* **O**: toggle odometry observation display
+* **Esc**: close
+
+## Legend
+
+* **Red circles**: Poses. A line shows the orientation.
+* **Blue squares**: Landmarks.
+* **Green lines**: Bearing measures.
+* **Purple lines**: Odometry measures.
+* *Purple bar at the side of the image*: no meaning at all.
   It only serves as a visual element that changes as iterations pass, to
   make sure the program is actually doing something even if the state
   remains the same.
 
-# Controls
+# Folder structure
 
-Note: some buttons may not work if the user doesn't click on the image
-first.
-
-* Any key other than the listed ones: advance one iteration
-* Tab/PgDn/Shift: advance many iterations (note: the image will freeze and
-  not update until the whole batch of iterations is done)
-* B: toggle bearing observation display
-* O: toggle odometry observation display
-* Esc: close
+* The source for the executables is here:
+  * `executables`: compile and execute this to run the project (see above)
+  * `tests`: some test executables I did, not really part of the project
+* The main source code is here:
+  * `framework`: data structures
+  * `slam`: algorithm
+  * `utils`: miscellanea
+* The dataset is here:
+  * `data`: self-explanatory
