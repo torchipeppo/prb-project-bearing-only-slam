@@ -35,6 +35,8 @@ first.*
 * **O**: toggle odometry observation display
 * **Esc**: close
 
+*Note: closing the window does **NOT** terminate the program. If the window is accidentally closed, use `Ctrl+C` on the terminal.*
+
 ## Legend
 
 * **Red circles**: Poses. A line shows the orientation.
